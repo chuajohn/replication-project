@@ -1,0 +1,766 @@
+---
+title: "McConnell et al (2017) Paper Replication"
+author: "John Chua"
+date: "5/4/2021"
+output:
+  pdf_document: default
+  word_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(stargazer)
+library(tidyverse)
+```
+
+# Abstract
+McConnell et al (2017) fielded three experiments to show how partisanship shapes behavior and economic outcomes. However, upon the discovery of mistakes in the dataset, an erratum (2020) was published to rectify the paper, though the authors ultimately concluded that the errors did not affect the study's findings. Focusing on the first two experiments, I successfully replicated the paper's OLS models using the revised dataset. However, as an extension, I ran three further robustness checks: testing the authors' decision to truncate the data, controlling for potential confounders and omitted variables, and using a logit regression instead of an OLS regression. For each of these robustness checks, I show that the effect of copartisanship on a number of the outcome variables in both experiments is no longer statistically significant. These issues appear to be unique to the revised dataset rather than the dataset upon which the paper was initially accepted to the journal.
+
+# 1. Introduction
+McConnell et al (2017) ran three field experiments to test the effect of partisan identities on economic decisionmaking. My paper focuses on replicating the first two. In the first experiment, participants were hired on an online labor market (MTurk) to copyedit a document from a company. They were also told about the partisanship of the company’s founders. The authors studied the effect of the individual being from the same party or from the opposing party as the company's founders on three outcome variables: "wage requested", or the amount that the individual indicated they would request for a similar job in future, "errors caught", or the number of errors caught out of the 11 that were intentionally embedded in the document, and "total edits", or the total number of corrections made by the individual which was used as a proxy for effort put into the editing work. They performed OLS regressions for copartisanship and counterpartisanship along with covariates about education and experience against these outcome variables to determine if being from the same or opposing party had a statistically significant effect on the outcome variables.
+
+In the second experiment, participants were sent an email giving them the opportunity to purchase an Amazon gift card at a steeply discounted prize. However, they were also told in the email that the cards were leftover thank you gifts for volunteers at a fundraiser of a political party (which would be either aligned to their own party or opposed to it). The authors then performed an OLS regression of copartisanship or counterpartisanship against two outcome variables — whether the individual responded to the email ("responded to email"), and whether the individual purchased the gift card ("request to purchase").  
+
+However, an erratum (2020) was published because the authors detected mistakes in the filtering of observations, merging of data files and coding of variables. An updated dataset was released. After rerunning their models, the authors found that the mistakes "did not affect our statistical results and changed none of our substantive conclusions." 
+I successfully replicated the OLS models presented in the paper using the revised dataset (Tables 1 and 2). As an extension, however, I ran three further robustness checks:
+
+* For the first experiment, I noticed that the authors truncated the dataset, running the OLS regression for values of wage requested below 20. I ran the same regression using the full dataset to explore the effect of doing this on significance levels (Table 3).
+
+* For both the first and second experiments, I tested the effect of adding omitted variables like demographic characteristics and, in the labor market experiment, perceptions about the employer to the regression to explore the possibility of confounders (Tables 4, 5 and 7).
+
+* For the second experiment which had a dichotomous outcome, I ran a logit regression apart from the OLS regression presented in the paper (Table 6).
+
+While most of these robustness checks corroborated the authors' findings, I show that when the wage data is not truncated, the effect of copartisanship on wage requested is no longer statistically significant in the first experiment. Furthermore, adding background covariates like demographic information and perceptions about the employer into the regression for the first experiment causes the effect of copartisanship on total edits fall below conventional thresholds of statistical significance. Moreover, running a logistic regression and adding the covariate of age in the second experiment causes the effect of copartisanship on interest in purchasing the gift card to no longer be statistically significant. These issues appear to be unique to the revised dataset and not the dataset based upon which the publication was first accepted to the journal. They may potentially weaken the authors' claims about the effect of copartisanship on real-life economic decision-making.
+
+# 2. Literature Review
+McConnell et al (2017) add to a growing body of literature that suggests that political partisanship forms a part of the individual's social identity, shaping interactions in both political and apolitical fields. Previous research has already documented the phenomenon of affective polarization, where individuals of a single political party experience distaste and antipathy towards members of the other party (Iyengar, Sood, and Lelkes 2012; Iyengar and Westwood 2014). More recently, Gerber and Huber (2010) provided evidence of how this shapes behavior by demonstrating that partisans rate the economy more favorably when leaders of their political party are in power. 
+
+McConnell et al (2017) extend Gerber and Huber's (2009) work in this nascent but growing field about how partisan affiliations can affect economic interactions between individuals. In particular, they go beyond the use of surveys and measurements of economic perceptions per Gerber and Huber (2010), which may be susceptible to partisan cheap talk or Hawthorne effects when participants know they are being studied. By using field experiments in settings that parallel the workplace and the marketplace, they empirically demonstrate that partisan identities can alter and shape realworld economic decision making.
+
+# 3. Replication
+I successfully replicated the OLS regressions for both Experiments 1 and 2. Table 1 presented below parallels Table 1 in the erratum (McConnell et al 2020). As is apparent, there is a statistically significant effect of copartisanship on wages requested and total edits, even after controlling for education and previous experience. Individuals appear to be willing to give employers of the same political party a discount of $0.21 on average compared to the control group (p < 0.05). Interestingly, they also appear to make 0.76 fewer total edits on average compared to the control group, a statistically significant finding (p < 0.05) that was unexpected and surprising.
+
+There was, however, no statistically significant effect of copartisanship on errors caught. Neither was there a statistically significant finding of counterpartisanship for all three outcome variables, which suggests that partisanship operates in terms of ingroup favoritism rather than outgroup hostility when it comes to economic decisionmaking.
+
+## Table 1 
+### The Effect of Employer Partisanship on Employee Behavior
+
+```{r table 1, results='asis'}
+
+df_study1 <- read.csv('analysis/data_study1_new.csv')
+
+df_study1_notrunc <- df_study1
+df_study1 <- df_study1 %>%
+  filter(wage_ask < 20)
+
+lm_wage <- lm(wage_ask ~ condition_copart + condition_counter,
+              data = df_study1)
+lm_grade <- lm(grade ~ condition_copart + condition_counter,
+               data = df_study1)
+lm_answers <- lm(num_answers ~ condition_copart + condition_counter,
+                 data = df_study1)
+
+lm_wage_covs <- lm(wage_ask ~ condition_copart + condition_counter + educ_score + exp_score,
+                   data = df_study1)
+lm_grade_covs <- lm(grade ~ condition_copart + condition_counter + educ_score + exp_score,
+                    data = df_study1)
+lm_answers_covs <- lm(num_answers ~ condition_copart + condition_counter + educ_score + exp_score,
+                      data = df_study1)
+
+# Switch baseline in order to compute copart/counter comparison
+lm_wage_supp <- lm(wage_ask ~ condition_copart + condition_neutral,
+                   data = df_study1)
+lm_grade_supp <- lm(grade ~ condition_copart + condition_neutral,
+                    data = df_study1)
+lm_answers_supp <- lm(num_answers ~ condition_copart + condition_neutral,
+                      data = df_study1)
+
+lm_wage_covs_supp <- lm(wage_ask ~ condition_copart + condition_neutral + educ_score + exp_score,
+                        data = df_study1)
+lm_grade_covs_supp <- lm(grade ~ condition_copart + condition_neutral + educ_score + exp_score,
+                         data = df_study1)
+lm_answers_covs_supp <- lm(num_answers ~ condition_copart + condition_neutral + educ_score + exp_score,
+                           data = df_study1)
+
+# Add a row to the table with the copart/counter comparison
+additional_row_1 <- c('Co-Partisan minus',
+                      paste(c(round(lm_wage_supp$coefficients['condition_copart'], 2)),collapse = ''),
+                      paste(c(round(lm_grade_supp$coefficients['condition_copart'], 2)),
+                             collapse = ''),
+                      paste(c(round(lm_answers_supp$coefficients['condition_copart'], 2)), collapse = ''),
+                      paste(c(round(lm_wage_covs_supp$coefficients['condition_copart'], 2)),collapse = ''),
+                      paste(c(round(lm_grade_covs_supp$coefficients['condition_copart'], 2)),collapse = ''),
+                      paste(c(round(lm_answers_covs_supp$coefficients['condition_copart'], 2)), collapse = ''))
+additional_row_2 <- c('Counter-Partisan',
+                      paste(c('(',
+                              as.character(round(summary(lm_wage_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_grade_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_answers_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_wage_covs_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_grade_covs_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_answers_covs_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''))
+
+# and write the result
+stargazer(lm_wage, lm_grade, lm_answers,
+          lm_wage_covs, lm_grade_covs, lm_answers_covs,
+          dep.var.labels = c('Wage', 'Errors Caught', 'Total Edits',
+                             'Wage', 'Errors Caught', 'Total Edits'),
+          covariate.labels = c('Co-partisan', 'Counter-partisan',
+                               'Education', 'Experience'),
+          omit.stat = c('adj.rsq', 'ser', 'f'),
+          header=FALSE,
+          single.row = TRUE, # to put coefficients and standard errors on same line
+          no.space = TRUE, # to remove the spaces after each line of coefficients
+          column.sep.width = "-12pt", #to reduce column width
+          font.size = "small", # to make font size smaller
+          star.cutoffs = NA,
+          omit.table.layout = "n",
+          add.lines = list(additional_row_1, additional_row_2,rep('', 7)),
+          float = FALSE,
+          notes.append = F)
+```
+
+I also successfully replicated the OLS regression for the second experiment. Table 2 presented below parallels Table 2 in the erratum (McConnell et al 2020). As is evident from the table, there was a statistically significant effect of co-partisanship among strong partisans for responding to the email and expressing interest in purchasing the gift card. They were 3.2% more likely to respond to the email than those in the control group on average, and 2.8% more likely to express interest in buying the gift card (both p values < 0.05). 
+
+However, there was no statistically significant effect of co-partisanship on either of the outcome variables among the entire group or the sample of weak partisans. There were also no statistically significant effects of counter-partisanship, which is consonant with the finding of Experiment 1 that partisanship operates in terms of ingroup favoritism rather than outgroup hostility when it comes to economic decisionmaking.
+
+## Table 2 
+### The Effect of Seller Partisanship on Buyer Behavior
+
+```{r table 2, results='asis'}
+
+df_study2 <- read.csv('analysis/data_study2_new.csv')
+
+lm_responded_full <- lm(responded ~ copart_condition +
+                          counterpart_condition,
+                        data = df_study2)
+lm_responded_strong <- lm(responded ~ copart_condition +
+                            counterpart_condition,
+                          data = df_study2,
+                          subset = df_study2$strong_part == 1)
+lm_responded_notstrong <- lm(responded ~ copart_condition +
+                               counterpart_condition,
+                             data = df_study2,
+                             subset = df_study2$strong_part == 0)
+lm_yes_full <- lm(yes ~ copart_condition +
+                    counterpart_condition,
+                  data = df_study2)
+lm_yes_strong <- lm(yes ~ copart_condition +
+                      counterpart_condition,
+                    data = df_study2,
+                    subset = df_study2$strong_part == 1)
+lm_yes_notstrong <- lm(yes ~ copart_condition +
+                         counterpart_condition,
+                       data = df_study2,
+                       subset = df_study2$strong_part == 0)
+
+# Change the baseline in order to compute copartisan minus counterpartisan
+lm_responded_full_supp <- lm(responded ~ copart_condition +
+                               neutral_condition,
+                             data = df_study2)
+lm_responded_strong_supp <- lm(responded ~ copart_condition +
+                                 neutral_condition,
+                               data = df_study2,
+                               subset = df_study2$strong_part == 1)
+lm_responded_notstrong_supp <- lm(responded ~ copart_condition +
+                                    neutral_condition,
+                                  data = df_study2,
+                                  subset = df_study2$strong_part == 0)
+lm_yes_full_supp <- lm(yes ~ copart_condition +
+                         neutral_condition,
+                       data = df_study2)
+lm_yes_strong_supp <- lm(yes ~ copart_condition +
+                           neutral_condition,
+                         data = df_study2,
+                         subset = df_study2$strong_part == 1)
+lm_yes_notstrong_supp <- lm(yes ~ copart_condition +
+                              neutral_condition,
+                            data = df_study2,
+                            subset = df_study2$strong_part == 0)
+
+# Make the additional rows for output
+additional_row_1 <- c('Co-Partisan minus',
+                      paste(c(round(lm_responded_full_supp$coefficients['copart_condition'], 3)), collapse = ''),
+                      paste(c(round(lm_responded_strong_supp$coefficients['copart_condition'], 3)), collapse = ''),
+                      paste(c(round(lm_responded_notstrong_supp$coefficients['copart_condition'], 3)), collapse = ''),
+                      paste(c(round(lm_yes_full_supp$coefficients['copart_condition'], 3)), collapse = ''),
+                      paste(c(round(lm_yes_strong_supp$coefficients['copart_condition'], 3)), collapse = ''),
+                      paste(c(round(lm_yes_notstrong_supp$coefficients['copart_condition'], 3)), collapse = ''))
+additional_row_2 <- c('Counter-Partisan',
+                      paste(c('(',
+                              as.character(round(summary(lm_responded_full_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_responded_strong_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_responded_notstrong_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_yes_full_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_yes_strong_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_yes_notstrong_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''))
+
+# and write the result
+stargazer(lm_responded_full,
+          lm_responded_strong,
+          lm_responded_notstrong,
+          lm_yes_full,
+          lm_yes_strong,
+          lm_yes_notstrong,
+          header=FALSE, # to get rid of r package output text
+          single.row = TRUE, # to put coefficients and standard errors on same line
+          no.space = TRUE, # to remove the spaces after each line of coefficients
+          column.sep.width = "-12pt", #to reduce column width
+          font.size = "small", # to make font size smaller
+          float = FALSE,
+          dep.var.labels = c('Responded to Email', 'Request to Purchase'),
+          model.numbers = F,
+          column.labels = c('Full Sample', 'Strong Partisans',
+                            'Weak/Lean Partisans', 'Full Sample',
+                            'Strong Partisans', 'Weak/Lean Partisans'),
+          covariate.labels = c('Co-partisan', 'Counter-partisan'),
+          omit.stat = c('adj.rsq', 'ser', 'f'),
+          star.cutoffs = NA,
+          omit.table.layout = "n",
+          add.lines = list(additional_row_1, additional_row_2,rep('', 7)))
+```
+
+
+# 4. Extension
+
+### Testing the effect of truncating the wage dataset in Experiment 1
+I noticed that the authors decided to drop all wage requested values that exceeded 20 for the first experiment, resulting in a decrease in the number of observations from n = 1280 to n = 1254. I was curious about what would happen to the levels of significance on the outcome variables if I ran the OLS regression with the dataset with the full range of wages.
+
+When I did this, I found that the effect of copartisanship on wage requested which was initially p < 0.05 (Table 1) was now no longer statistically significant, with an estimated coefficient of -0.202 but a standard error of 2.105 (Table 3). Whether this is an issue for the findings will depend on how justifiable it is to exclude entries with values above 20 for wage requested. The authors reason that these entries should not be included because they are outlier values that are likely caused by typos or misunderstandings. In contrast, if these were values that were sincerely desired by the respondents, they should be included, which would decrease the strength of the finding that copartisanship has a statistically significant relationship with the levels of wages requested. 
+
+## Table 3 
+```{r table 3, results='asis'}
+
+lm_wage <- lm(wage_ask ~ condition_copart + condition_counter,
+              data = df_study1_notrunc)
+lm_grade <- lm(grade ~ condition_copart + condition_counter,
+               data = df_study1_notrunc)
+lm_answers <- lm(num_answers ~ condition_copart + condition_counter,
+                 data = df_study1_notrunc)
+
+lm_wage_covs <- lm(wage_ask ~ condition_copart + condition_counter + educ_score + exp_score,
+                   data = df_study1_notrunc)
+lm_grade_covs <- lm(grade ~ condition_copart + condition_counter + educ_score + exp_score,
+                    data = df_study1_notrunc)
+lm_answers_covs <- lm(num_answers ~ condition_copart + condition_counter + educ_score + exp_score,
+                      data = df_study1_notrunc)
+
+# Switch baseline in order to compute copart/counter comparison
+lm_wage_supp <- lm(wage_ask ~ condition_copart + condition_neutral,
+                   data = df_study1_notrunc)
+lm_grade_supp <- lm(grade ~ condition_copart + condition_neutral,
+                    data = df_study1_notrunc)
+lm_answers_supp <- lm(num_answers ~ condition_copart + condition_neutral,
+                      data = df_study1_notrunc)
+
+lm_wage_covs_supp <- lm(wage_ask ~ condition_copart + condition_neutral + educ_score + exp_score,
+                        data = df_study1_notrunc)
+lm_grade_covs_supp <- lm(grade ~ condition_copart + condition_neutral + educ_score + exp_score,
+                         data = df_study1_notrunc)
+lm_answers_covs_supp <- lm(num_answers ~ condition_copart + condition_neutral + educ_score + exp_score,
+                           data = df_study1_notrunc)
+
+# Add a row to the table with the copart/counter comparison
+additional_row_1 <- c('Co-Partisan minus',
+                      paste(c(round(lm_wage_supp$coefficients['condition_copart'], 2)),collapse = ''),
+                      paste(c(round(lm_grade_supp$coefficients['condition_copart'], 2)),
+                             collapse = ''),
+                      paste(c(round(lm_answers_supp$coefficients['condition_copart'], 2)), collapse = ''),
+                      paste(c(round(lm_wage_covs_supp$coefficients['condition_copart'], 2)),collapse = ''),
+                      paste(c(round(lm_grade_covs_supp$coefficients['condition_copart'], 2)),collapse = ''),
+                      paste(c(round(lm_answers_covs_supp$coefficients['condition_copart'], 2)), collapse = ''))
+additional_row_2 <- c('Counter-Partisan',
+                      paste(c('(',
+                              as.character(round(summary(lm_wage_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_grade_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_answers_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_wage_covs_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_grade_covs_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_answers_covs_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''))
+
+# and write the result
+stargazer(lm_wage, lm_grade, lm_answers,
+          lm_wage_covs, lm_grade_covs, lm_answers_covs,
+          dep.var.labels = c('Wage', 'Errors Caught', 'Total Edits',
+                             'Wage', 'Errors Caught', 'Total Edits'),
+          covariate.labels = c('Co-partisan', 'Counter-partisan',
+                               'Education', 'Experience'),
+          omit.stat = c('adj.rsq', 'ser', 'f'),
+          header=FALSE,
+          single.row = TRUE, # to put coefficients and standard errors on same line
+          no.space = TRUE, # to remove the spaces after each line of coefficients
+          column.sep.width = "-12pt", #to reduce column width
+          font.size = "small", # to make font size smaller
+          star.cutoffs = NA,
+          omit.table.layout = "n",
+          float = FALSE,
+          add.lines = list(additional_row_1, additional_row_2,rep('', 7)),
+          notes.append = F)
+```
+
+
+### Testing the effect of controlling for background covariates in Experiment 1
+I decided to incorporate other covariates into the OLS regression to determine if there are omitted variables that might affect the levels of significance of the findings. The rationale for this is that it is possible that lurking confounders which are correlated with party ID are driving the observed effects of copartisanship and counterpartisanship, rather than party ID itself. 
+
+I first incorporated covariates about demographic characteristics, specifically age and gender, into the OLS regression (Table 4). I found that the effect of co-partisanship on wage requested was still statistically significant after controlling for these variables (p < 0.05). However, the effect of co-partisanship on total edits was no longer statistically significant, with an estimated coefficient of -0.685 that was less than two standard errors (0.351) away from 0. At the same time, there was a statistically significant effect of age (p < 0.05) on both wage requested and total edits, and a statistically significant effect of gender (p < 0.05) on total edits. This might suggest that gender and age are correlated with party ID, and that the initially statistically significant effect of party ID on total edits was partially due to the effect of gender and age rather than party ID. Interestingly, this issue appears unique to the revised dataset, since the authors had run a similar robustness check in the Online Appendix of their initial publication (2017). 
+
+## Table 4
+```{r dem covs, results='asis'}
+df_study1 <- read.csv('analysis/data_study1_new.csv')
+
+df_study1_notrunc <- df_study1
+df_study1 <- df_study1 %>%
+  filter(wage_ask < 20)
+
+lm_wage <- lm(wage_ask ~ condition_copart + condition_counter,
+              data = df_study1)
+lm_grade <- lm(grade ~ condition_copart + condition_counter,
+               data = df_study1)
+lm_answers <- lm(num_answers ~ condition_copart + condition_counter,
+                 data = df_study1)
+
+lm_wage_allcovs <-lm(wage_ask ~ condition_copart + condition_counter + educ_score + exp_score + age + male,
+                   data = df_study1)
+
+lm_grade_allcovs <- lm(grade ~ condition_copart + condition_counter + educ_score + exp_score + age + male,
+                    data = df_study1)
+
+lm_answers_allcovs <- lm(num_answers ~ condition_copart + condition_counter + educ_score + exp_score + age + male,
+                      data = df_study1)
+
+# Switch baseline in order to compute copart/counter comparison
+lm_wage_supp <- lm(wage_ask ~ condition_copart + condition_neutral,
+                   data = df_study1)
+lm_grade_supp <- lm(grade ~ condition_copart + condition_neutral,
+                    data = df_study1)
+lm_answers_supp <- lm(num_answers ~ condition_copart + condition_neutral,
+                      data = df_study1)
+
+lm_wage_allcovs_supp <- lm(wage_ask ~ condition_copart + condition_neutral + educ_score + exp_score + age + male,
+                        data = df_study1)
+lm_grade_allcovs_supp <- lm(grade ~ condition_copart + condition_neutral + educ_score + exp_score + age + male,
+                         data = df_study1)
+lm_answers_allcovs_supp <- lm(num_answers ~ condition_copart + condition_neutral + educ_score + exp_score + age + male,
+                           data = df_study1)
+
+# Add a row to the table with the copart/counter comparison
+additional_row_1 <- c('Co-Partisan minus',
+                      paste(c(round(lm_wage_supp$coefficients['condition_copart'], 2)),collapse = ''),
+                      paste(c(round(lm_grade_supp$coefficients['condition_copart'], 2)),
+                             collapse = ''),
+                      paste(c(round(lm_grade_covs_supp$coefficients['condition_copart'], 2)),collapse = ''),
+                      paste(c(round(lm_grade_covs_supp$coefficients['condition_copart'], 2)),collapse = ''),
+                      paste(c(round(lm_grade_covs_supp$coefficients['condition_copart'], 2)),collapse = ''),
+                      paste(c(round(lm_answers_covs_supp$coefficients['condition_copart'], 2)), collapse = ''))
+
+
+
+additional_row_2 <- c('Counter-Partisan',
+                      paste(c('(',
+                              as.character(round(summary(lm_wage_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_grade_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_answers_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_wage_covs_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_grade_covs_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_answers_covs_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''))
+
+# and write the result
+stargazer(lm_wage, lm_grade, lm_answers,
+          lm_wage_allcovs, lm_grade_allcovs, lm_answers_allcovs,
+          dep.var.labels = c('Wage', 'Errors Caught', 'Total Edits',
+                             'Wage', 'Errors Caught', 'Total Edits'),
+          covariate.labels = c('Co-partisan', 'Counter-partisan',
+                               'Education', 'Experience', 'Age', 'Gender'),
+          single.row = TRUE, # to put coefficients and standard errors on same line
+          no.space = TRUE, # to remove the spaces after each line of coefficients
+          column.sep.width = "-12pt", #to reduce column width
+          font.size = "small", # to make font size smaller
+          omit.stat = c('adj.rsq', 'ser', 'f'),
+          header=FALSE,
+          star.cutoffs = NA,
+          omit.table.layout = "n",
+          float = FALSE,
+          add.lines = list(additional_row_1, additional_row_2,rep('', 7)))
+```
+
+I then decided to control for covariates about the respondent's perceptions about the employer which tasked them to complete the copyediting task (Table 5). This includes the respondent's beliefs about whether the company has integrity ("Perception of Integrity"), whether the product will benefit buyers ("Perception of Benefit"), and whether the worker would want to work for the company ("Desire for Employment"). 
+
+I found that the effect of copartisanship on wages requested remained significant even after these covariates were introduced (p < 0.05). However, controlling for these covariates caused the effect of copartisanship on total edits to become even less pronounced (the estimated coefficient of copartisanship total edits, for example, decreased to from -0.856 to -0.460, while the standard error remained relatively steady from 0.360 to 0.344). At the same time, both Perception of Integrity and Desire for Employment have a clear strong and statistically significant negative effect on total edits  (p < 0.05). It is therefore possible that these variables could also have been correlated with party ID, and that they also contributed to part of the initial statistically significant effect of copartisanship on total edits.
+
+## Table 5 
+
+```{r company covs, results='asis'}
+df_study1 <- read.csv('analysis/data_study1_new.csv')
+
+df_study1_notrunc <- df_study1
+df_study1 <- df_study1 %>%
+  filter(wage_ask < 20)
+
+lm_wage <- lm(wage_ask ~ condition_copart + condition_counter,
+              data = df_study1)
+lm_grade <- lm(grade ~ condition_copart + condition_counter,
+               data = df_study1)
+lm_answers <- lm(num_answers ~ condition_copart + condition_counter,
+                 data = df_study1)
+
+lm_wage_allcovs_company <-lm(wage_ask ~ condition_copart + condition_counter + educ_score + exp_score + age + male + benefit_score + integrity_score + work_for_score,
+                   data = df_study1)
+
+lm_grade_allcovs_company <- lm(grade ~ condition_copart + condition_counter + educ_score + exp_score + age + male + benefit_score + integrity_score + work_for_score,
+                    data = df_study1)
+
+lm_answers_allcovs_company <- lm(num_answers ~ condition_copart + condition_counter + educ_score + exp_score + age + male + benefit_score + integrity_score + work_for_score,
+                      data = df_study1)
+
+# Switch baseline in order to compute copart/counter comparison
+lm_wage_supp <- lm(wage_ask ~ condition_copart + condition_neutral,
+                   data = df_study1)
+lm_grade_supp <- lm(grade ~ condition_copart + condition_neutral,
+                    data = df_study1)
+lm_answers_supp <- lm(num_answers ~ condition_copart + condition_neutral,
+                      data = df_study1)
+
+lm_wage_allcovs_company_supp <- lm(wage_ask ~ condition_copart + condition_neutral + educ_score + exp_score + age + male + benefit_score + integrity_score + work_for_score,
+                        data = df_study1)
+lm_grade_allcovs_companysupp <- lm(grade ~ condition_copart + condition_neutral + educ_score + exp_score + age + male + benefit_score + integrity_score + work_for_score,
+                         data = df_study1)
+lm_answers_allcovs_company_supp <- lm(num_answers ~ condition_copart + condition_neutral + educ_score + exp_score + age + male + benefit_score + integrity_score + work_for_score,
+                           data = df_study1)
+
+# Add a row to the table with the copart/counter comparison
+additional_row_1 <- c('Co-Partisan minus',
+                      paste(c(round(lm_wage_supp$coefficients['condition_copart'], 2)),collapse = ''),
+                      paste(c(round(lm_grade_supp$coefficients['condition_copart'], 2)),
+                             collapse = ''),
+                      paste(c(round(lm_grade_covs_supp$coefficients['condition_copart'], 2)),collapse = ''),
+                      paste(c(round(lm_grade_covs_supp$coefficients['condition_copart'], 2)),collapse = ''),
+                      paste(c(round(lm_grade_covs_supp$coefficients['condition_copart'], 2)),collapse = ''),
+                      paste(c(round(lm_answers_covs_supp$coefficients['condition_copart'], 2)), collapse = ''))
+
+
+
+additional_row_2 <- c('Counter-Partisan',
+                      paste(c('(',
+                              as.character(round(summary(lm_wage_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_grade_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_answers_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_wage_covs_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_grade_covs_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_answers_covs_supp)$coefficients['condition_copart',2], 2)),
+                              ')'), collapse = ''))
+
+# and write the result
+stargazer(lm_wage, lm_grade, lm_answers,
+          lm_wage_allcovs_company, lm_grade_allcovs_company, lm_answers_allcovs_company,
+          dep.var.labels = c('Wage', 'Errors Caught', 'Total Edits',
+                             'Wage', 'Errors Caught', 'Total Edits'),
+          covariate.labels = c('Co-partisan', 'Counter-partisan',
+                               'Education', 'Experience', 'Age', 'Gender', 'Perception of Benefit', 'Perception of Integrity', 'Desire for Employment'),
+          single.row = TRUE, # to put coefficients and standard errors on same line
+          no.space = TRUE, # to remove the spaces after each line of coefficients
+          column.sep.width = "-12pt", #to reduce column width
+          font.size = "small", # to make font size smaller
+          omit.stat = c('adj.rsq', 'ser', 'f'),
+          header=FALSE,
+          star.cutoffs = NA,
+          omit.table.layout = "n",
+          float = FALSE,
+          add.lines = list(additional_row_1, additional_row_2,rep('', 7)))
+
+
+```
+
+### Running a logistic regression for Experiment 2
+I decided to run a logistic regression as a robustness check for the OLS regression run for Experiment 2 (Table 6). The logistic regression is appropriate here as the outcomes for the variables are binary (whether the respondent replied to the email, and whether they expressed interest in buying the gift card). I found that the effect of strong co-partisanship on whether the individual replied to the email was still statistically significant (p < 0.05). However, the effect of strong co-partisanship on whether the individual expressed interest in purchasing the gift card was no longer statistically significant, with an estimated coefficient of 1.237 that was less than 2 standard errors (0.665) away from 0.
+
+## Table 6
+
+```{r table 6, results = 'asis'}
+logit_responded_full <- glm(responded ~ copart_condition +
+                          counterpart_condition,
+                        data = df_study2, family = "binomial")
+logit_responded_strong <- glm(responded ~ copart_condition +
+                            counterpart_condition,
+                          data = df_study2,
+                          subset = df_study2$strong_part == 1, family = "binomial")
+logit_responded_notstrong <- glm(responded ~ copart_condition +
+                               counterpart_condition,
+                             data = df_study2,
+                             subset = df_study2$strong_part == 0, family = "binomial")
+logit_yes_full <- glm(yes ~ copart_condition +
+                    counterpart_condition,
+                  data = df_study2, family = "binomial")
+logit_yes_strong <- glm(yes ~ copart_condition +
+                      counterpart_condition,
+                    data = df_study2,
+                    subset = df_study2$strong_part == 1, family = "binomial")
+logit_yes_notstrong <- glm(yes ~ copart_condition +
+                         counterpart_condition,
+                       data = df_study2,
+                       subset = df_study2$strong_part == 0, family = "binomial")
+
+# Change the baseline in order to compute copartisan minus counterpartisan
+logit_responded_full_supp <- glm(responded ~ copart_condition +
+                               neutral_condition,
+                             data = df_study2, family = "binomial")
+logit_responded_strong_supp <- glm(responded ~ copart_condition +
+                                 neutral_condition,
+                               data = df_study2,
+                               subset = df_study2$strong_part == 1, family = "binomial")
+logit_responded_notstrong_supp <- glm(responded ~ copart_condition +
+                                    neutral_condition,
+                                  data = df_study2,
+                                  subset = df_study2$strong_part == 0, family = "binomial")
+logit_yes_full_supp <- glm(yes ~ copart_condition +
+                         neutral_condition,
+                       data = df_study2, family = "binomial")
+logit_yes_strong_supp <- glm(yes ~ copart_condition +
+                           neutral_condition,
+                         data = df_study2,
+                         subset = df_study2$strong_part == 1, family = "binomial")
+logit_yes_notstrong_supp <- glm(yes ~ copart_condition +
+                              neutral_condition,
+                            data = df_study2,
+                            subset = df_study2$strong_part == 0, family = "binomial")
+
+# Make the additional rows for output
+additional_row_1 <- c('Co-Partisan minus',
+                      paste(c(round(lm_responded_full_supp$coefficients['copart_condition'], 3)), collapse = ''),
+                      paste(c(round(lm_responded_strong_supp$coefficients['copart_condition'], 3)), collapse = ''),
+                      paste(c(round(lm_responded_notstrong_supp$coefficients['copart_condition'], 3)), collapse = ''),
+                      paste(c(round(lm_yes_full_supp$coefficients['copart_condition'], 3)), collapse = ''),
+                      paste(c(round(lm_yes_strong_supp$coefficients['copart_condition'], 3)), collapse = ''),
+                      paste(c(round(lm_yes_notstrong_supp$coefficients['copart_condition'], 3)), collapse = ''))
+additional_row_2 <- c('Counter-Partisan',
+                      paste(c('(',
+                              as.character(round(summary(lm_responded_full_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_responded_strong_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_responded_notstrong_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_yes_full_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_yes_strong_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_yes_notstrong_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''))
+
+# and write the result
+stargazer(logit_responded_full,
+          logit_responded_strong,
+          logit_responded_notstrong,
+          logit_yes_full,
+          logit_yes_strong,
+          logit_yes_notstrong,
+          dep.var.labels = c('Responded to Email', 'Request to Purchase'),
+          model.numbers = F,
+          column.labels = c('Full Sample', 'Strong Partisans',
+                            'Weak/Lean Partisans', 'Full Sample',
+                            'Strong Partisans', 'Weak/Lean Partisans'),
+          single.row = TRUE, # to put coefficients and standard errors on same line
+          no.space = TRUE, # to remove the spaces after each line of coefficients
+          column.sep.width = "-12pt", #to reduce column width
+          font.size = "small", # to make font size smaller
+          covariate.labels = c('Co-partisan', 'Counter-partisan'),
+          omit.stat = c('adj.rsq', 'ser', 'f'),
+          add.lines = list(additional_row_1, additional_row_2,rep('', 7)),
+          header=FALSE,
+          star.cutoffs = NA,
+          float = FALSE,
+          omit.table.layout = "n")
+  
+```
+
+### Testing the effect of adding covariates in Experiment 2
+As with Experiment 1, I added demographic covariates for age and race to test their effect on levels of statistical significance in the OLS model (Table 7). I found that the effect of strong co-partisanship on responding to the email was still statistically significant (p < 0.05). However, the effect of strong co-partisanship on interest in purchasing the gift card was no longer statistically significant, with an estimated coefficient of 0.027 that was less than two standard errors (0.014) away from 0. This is likely due to the influence of the age variable, which had a small but statistically significant effect (estimated coefficient of -0.001, p < 0.05) for both outcome variables. In contrast, race appears not to have had a strong or statistically significant effect on either outcome variables (all p > 0.05). Once again, this issue of potential confounding appears unique to the revised dataset, since the authors had run a robustness check in the Online Appendix of their initial publication (2017). 
+
+## Table 7
+
+```{r cov, results = 'asis'}
+
+lm_responded_full <- lm(responded ~ copart_condition +
+                          counterpart_condition,
+                        data = df_study2)
+lm_responded_strong <- lm(responded ~ copart_condition +
+                            counterpart_condition,
+                          data = df_study2,
+                          subset = df_study2$strong_part == 1)
+lm_responded_strong_cov <- lm(responded ~ copart_condition +
+                               counterpart_condition + age + race_fixed + educ_fixed + gender,
+                             data = df_study2,
+                             subset = df_study2$strong_part == 1)
+
+lm_yes_full <- lm(yes ~ copart_condition +
+                    counterpart_condition,
+                  data = df_study2)
+lm_yes_strong <- lm(yes ~ copart_condition +
+                      counterpart_condition,
+                    data = df_study2,
+                    subset = df_study2$strong_part == 1)
+lm_yes_strong_cov <- lm(yes ~ copart_condition +
+                         counterpart_condition + age + race_fixed + educ_fixed + gender,
+                       data = df_study2,
+                       subset = df_study2$strong_part == 1)
+
+# Change the baseline in order to compute copartisan minus counterpartisan
+lm_responded_full_supp <- lm(responded ~ copart_condition +
+                               neutral_condition,
+                             data = df_study2)
+lm_responded_strong_supp <- lm(responded ~ copart_condition +
+                                 neutral_condition,
+                               data = df_study2,
+                               subset = df_study2$strong_part == 1)
+lm_responded_strong_cov_supp <- lm(responded ~ copart_condition +
+                                    neutral_condition + age + race_fixed + educ_fixed + gender,
+                                  data = df_study2,
+                                  subset = df_study2$strong_part == 1)
+lm_yes_full_supp <- lm(yes ~ copart_condition +
+                         neutral_condition + age + race_fixed + educ_fixed + gender,
+                       data = df_study2)
+lm_yes_strong_supp <- lm(yes ~ copart_condition +
+                           neutral_condition,
+                         data = df_study2,
+                         subset = df_study2$strong_part == 1)
+lm_yes_strong_cov_supp <- lm(yes ~ copart_condition +
+                              neutral_condition + age + race_fixed + educ_fixed + gender,
+                            data = df_study2,
+                            subset = df_study2$strong_part == 1)
+
+# Make the additional rows for output
+additional_row_1 <- c('Co-Partisan minus',
+                      paste(c(round(lm_responded_full_supp$coefficients['copart_condition'], 3)), collapse = ''),
+                      paste(c(round(lm_responded_strong_supp$coefficients['copart_condition'], 3)), collapse = ''),
+                      paste(c(round(lm_responded_strong_cov_supp$coefficients['copart_condition'], 3)), collapse = ''),
+                      paste(c(round(lm_yes_full_supp$coefficients['copart_condition'], 3)), collapse = ''),
+                      paste(c(round(lm_yes_strong_supp$coefficients['copart_condition'], 3)), collapse = ''),
+                      paste(c(round(lm_yes_strong_cov_supp$coefficients['copart_condition'], 3)), collapse = ''))
+additional_row_2 <- c('Counter-Partisan',
+                      paste(c('(',
+                              as.character(round(summary(lm_responded_full_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_responded_strong_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_responded_strong_cov_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_yes_full_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_yes_strong_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''),
+                      paste(c('(',
+                              as.character(round(summary(lm_yes_strong_cov_supp)$coefficients[2,2], 3)),
+                              ')'), collapse = ''))
+
+# and write the result
+stargazer(lm_responded_full,
+          lm_responded_strong,
+          lm_responded_strong_cov,
+          lm_yes_full,
+          lm_yes_strong,
+          lm_yes_strong_cov,
+          float = FALSE,
+          header=FALSE, # to get rid of r package output text
+          single.row = TRUE, # to put coefficients and standard errors on same line
+          no.space = TRUE, # to remove the spaces after each line of coefficients
+          column.sep.width = "-12pt", #to reduce column width
+          font.size = "small", # to make font size smaller
+          dep.var.labels = c('Responded to Email', 'Request to Purchase'),
+          model.numbers = F,
+          column.labels = c('Full Sample', 'Strong Partisans',
+                            'Strong Partisans', 'Full Sample',
+                            'Strong Partisans', 'Strong Partisans'),
+          covariate.labels = c('Co-partisan', 'Counter-partisan', 'Age', 'Race (Black)', 'Race (Hispanic)', 'Race (Native American)', 'Race (Other)', 'Race (White)', 'Education (College)', 'Education (Grad Sch)', 'Education (High Sch)', 'Education (Some College)', 'Education (Some Grad Sch)', 'Education (Trade Sch)', 'Gender'),
+          omit.stat = c('adj.rsq', 'ser', 'f'),
+          star.cutoffs = NA,
+          omit.table.layout = "n",
+          add.lines = list(additional_row_1, additional_row_2,rep('', 7)))
+
+```
+
+# 5. Conclusion
+In summary, I ran three robustness checks using the revised dataset of Mcconnell et al. (2020) following their correction to their initial 2017 article - using the full wage dataset instead of the truncated one, controlling for potential confounders, and using a logit regression. I showed that these caused a number of the outcome variables in both Experiment 1 and 2 to no longer have a statistically significant relationship with co-partisanship. This might weaken some of their findings, suggesting that co-partisanship might not have as strong an effect on economic decision-making as was expected. 
+
+# 6. Bibliography
+Gerber, Alan S., and Gregory A. Huber. "Partisanship, Political Control, and Economic Assessments." *American Journal of Political Science* 54, no. 1 (2010): 153-73.  
+
+Iyengar, Shanto, Gaurav Sood, and Yphtach Lelkes. "Affect, Not Ideology." *Public Opinion Quarterly* 76, no. 3 (2012): 405-31.   
+
+Iyengar, Shanto, and Sean J. Westwood. "Fear and Loathing across Party Lines: New Evidence on Group Polarization." *American Journal of Political Science* 59, no. 3 (2014): 690-707.  
+
+Mcconnell, Christopher, Yotam Margalit, Neil Malhotra, and Matthew Levendusky. "The Economic Consequences of Partisanship in a Polarized Era." *American Journal of Political Science* 62, no. 1 (2017): 5-18.  
+
+Mcconnell, Christopher, Yotam Margalit, Neil Malhotra, and Matthew Levendusky. "Erratum: “The Economic Consequences of Partisanship in a Polarized Era”." *American Journal of Political Science* 64, no. 4 (2020): 1047-049.  
+
+# 7. Acknowledgements and Endnotes
+I am grateful to McConnell et al (2017, 2020) for making their original and revised datasets available on Harvard Dataverse. The link is accessible [here](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/R3GZZW).
+
+I am also grateful to Le Bao, Miroslav Bergam, and Prof. Jeff Gill for their guidance and helpful comments over the course of the semester.
+
+My working Git repository where the README, survey data files and RMarkdown file can be found is accessible [here](https://github.com/chuajohn/replication-project).
+
+
