@@ -1,4 +1,4 @@
-# replication-project
+# Replication of McConnell et al. (2017) 
 
 This folder contains the materials I used for my replication of McConnell et al. (2017). Included in this folder are a number of files. The "analysis" folder contains the raw data, namely the survey data for Experiment 1 and Experiment 2 titled "data_study1_new.csv" and "data_study2_new.csv" respectively. Apart from that, Replication.rmd is the R Markdown file used to generate my replication report, and the full replication report can be found in Replication.pdf. The dataset and a number of accompanying scripts were generously provided by the original authors in a Dataverse folder, accessible here: https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/R3GZZW
 
